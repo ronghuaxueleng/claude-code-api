@@ -1,0 +1,314 @@
+# =============================================================================
+# Claude Code API Gateway - .gitignore
+# =============================================================================
+# 此文件定义了不应提交到版本控制的文件和目录
+# 主要目的：保护敏感信息、避免本地文件污染、提高仓库清洁度
+# =============================================================================
+
+# =============================================================================
+# Python 相关文件
+# =============================================================================
+
+# 字节码和编译文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 包分发和构建
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 项目特定的 egg-info
+claude_code_api.egg-info/
+src/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# 包管理器
+pip-log.txt
+pip-delete-this-directory.txt
+.pdm.toml
+__pypackages__/
+
+# 虚拟环境
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python 工具缓存
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+cython_debug/
+
+# =============================================================================
+# 测试和覆盖率
+# =============================================================================
+
+# 测试覆盖率报告
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# 测试输出和结果
+test_outputs/
+test_results/
+tests/
+
+# =============================================================================
+# 数据库文件
+# =============================================================================
+
+# SQLite 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+claude_api.db
+test.db
+
+# SQLite 临时文件
+*-journal
+*-wal
+*-shm
+
+# 数据库文件路径模式
+*/claude_api.db
+*/test.db
+**/claude_api.db
+**/test.db
+**/claude_*.db
+**/test_*.db
+
+# =============================================================================
+# 日志和临时文件
+# =============================================================================
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+tmp/
+temp/
+.tmp/
+
+# 备份文件
+*.bak
+*.backup
+*.orig
+
+# =============================================================================
+# 敏感信息和配置文件
+# =============================================================================
+
+# 环境变量文件
+.env.local
+.env.production
+.env.development
+
+# 本地配置文件
+config.local.yaml
+config.local.yml
+secrets.yaml
+secrets.yml
+
+# API 密钥和令牌
+api_keys.txt
+tokens.txt
+.anthropic_key
+.claude_key
+
+# =============================================================================
+# IDE 和编辑器
+# =============================================================================
+
+# PyCharm / IntelliJ IDEA
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+.history/
+*.vsix
+
+# Cursor AI 编辑器
+.cursor/
+.cursorrules/
+.claude/
+CLAUDE.md
+.mcp.json
+
+# Vim / Neovim
+*.swp
+*.swo
+*~
+.vimrc
+.nvimrc
+
+# 其他编辑器
+.spyderproject
+.spyproject
+.ropeproject
+
+# =============================================================================
+# 操作系统文件
+# =============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+.Trash/
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =============================================================================
+# 框架和库特定
+# =============================================================================
+
+# Django
+local_settings.py
+
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Jupyter
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# =============================================================================
+# 文档和构建
+# =============================================================================
+
+# Sphinx 文档
+docs/_build/
+
+# mkdocs
+/site
+
+# PyBuilder
+.pybuilder/
+target/
+
+# 翻译文件
+*.mo
+*.pot
+
+# 生成的文档
+docs/start.md
+docs/typescript-translation-plan.md
+
+# =============================================================================
+# 开发工具配置
+# =============================================================================
+
+# 代码质量工具
+.pre-commit-config.yaml
+.flake8
+.isort.cfg
+
+# Docker
+.dockerignore
+Dockerfile.*
+
+# =============================================================================
+# 项目特定文件
+# =============================================================================
+
+# Claude Code API 会话数据
+sessions/
+projects/
+
+# 包缓存
+claude_code_api/__pycache__/
+tests/__pycache__/
+
+# =============================================================================
+# 注意事项
+# =============================================================================
+# 1. tests/ 目录中的测试脚本应该被版本控制跟踪
+# 2. 确保所有敏感信息（API 密钥、密码等）都被正确忽略
+# 3. 定期检查此文件，确保没有遗漏重要的忽略规则
+# =============================================================================

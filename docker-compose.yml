@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  claude-code-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: claude_code_api
+    restart: always
+    user: "0:0"  # 使用 root 用户运行（与宿主机匹配）
+    env_file:
+      - .env
+    environment:
+      # Python 环境
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - TZ=Asia/Shanghai
+
+      # Claude Code API 配置
+      - HOST=0.0.0.0
+      - PORT=8091
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+
+      # Claude CLI 配置
+      - CLAUDE_BINARY_PATH=/usr/local/bin/claude
+
+      # Anthropic API 配置（从 .env 文件读取）
+      - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN:-}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-sonnet-4-5-20250929}
+
+      # 数据库配置
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./claude_api.db}
+
+      # 认证配置
+      - REQUIRE_AUTH=${REQUIRE_AUTH:-false}
+      - API_KEYS=${API_KEYS:-}
+
+      # 项目配置
+      - PROJECT_ROOT=/app/projects
+      - MAX_CONCURRENT_SESSIONS=${MAX_CONCURRENT_SESSIONS:-10}
+
+    ports:
+      - "${PORT:-8091}:8091"
+
+    volumes:
+      # 数据持久化
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./projects:/app/projects
+      - ./sessions:/app/sessions
+
+      # 配置文件（可选）
+      - ./.env:/app/.env:ro
+      - ./CLAUDE.local.md:/app/CLAUDE.local.md:ro
+
+      # 时间同步
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8091/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
