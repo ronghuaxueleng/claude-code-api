@@ -89,8 +89,8 @@ RUN claude --version
 COPY pyproject.toml setup.py README.md ./
 COPY claude_code_api/ ./claude_code_api/
 
-# 复制 Claude 配置文件（如果存在）
-COPY CLAUDE.local.md ./ 2>/dev/null || true
+# 注意：CLAUDE.local.md 是可选的配置文件
+# 如果需要，请在构建时确保该文件存在，或通过 volume 挂载
 
 # 安装项目依赖（使用 setup.py）
 RUN python -m pip install --no-cache-dir -e .
