@@ -98,8 +98,15 @@ class Settings(BaseSettings):
 
     # Claude Configuration
     claude_binary_path: str = find_claude_binary()
+
+    # Anthropic API Configuration (read from .env file)
+    anthropic_base_url: str = "https://api.anthropic.com"
+    anthropic_api_key: str = ""
+
+    # Legacy fields (for backward compatibility)
     claude_base_url: str = "https://api.moonshot.cn/anthropic/"
     claude_api_key: str = "sk-JyiveXJh4jfKp73ZbdSkZ6FycuOSaluwAnXFAZcYFbcHzVDL"
+
     default_model: str = "kimi-k2-turbo-preview"
     fallback_model: str = "kimi-k2-0905-preview"  # Fallback model for better reliability
     max_concurrent_sessions: int = 10

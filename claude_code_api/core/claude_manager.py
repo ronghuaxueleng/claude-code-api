@@ -41,104 +41,95 @@ class ClaudeProcess:
         self.error_queue = asyncio.Queue()
         
     async def start(
-        self, 
-        prompt: str, 
+        self,
+        prompt: str,
         model: str = None,
         system_prompt: str = None,
         resume_session: str = None,
         provider_config: Dict[str, str] = None
     ) -> bool:
-        """Start Claude Code process with real-time output streaming."""
+        """Start Claude Code process with real-time output streaming in interactive mode."""
         try:
-            # Prepare real command - using correct CLI parameters
+            # Prepare command for interactive mode
             cmd = [settings.claude_binary_path]
-            
+
             # Handle session continuation vs new conversation
             if resume_session:
-                # Resume specific session - use -p for non-interactive mode
-                cmd.extend(["-p", prompt, "--resume", resume_session])
-                logger.info(f"🔄 Resuming session with prompt: {resume_session}")
+                cmd.extend(["--resume", resume_session])
+                logger.info(f"🔄 Resuming session: {resume_session}")
             else:
-                # New conversation - use -p for non-interactive mode
-                cmd.extend(["-p", prompt])
                 logger.info("🆕 Starting new conversation")
-            
-            # Add system prompt if provided (only for new conversations)
-            if system_prompt and not resume_session:
-                cmd.extend(["--append-system-prompt", system_prompt])
-            
+
             # Add model specification
             if model:
                 cmd.extend(["--model", model])
-            
-            # Always use stream-json output format with real-time partial messages
+
+            # Always use stream-json output format
             cmd.extend([
                 "--output-format", "stream-json",
-                "--verbose", 
+                "--verbose",  # Required for stream-json in interactive mode
                 "--dangerously-skip-permissions"
             ])
-            
+
             # Add partial messages support if enabled
             if settings.enable_partial_messages:
                 cmd.append("--include-partial-messages")
-            
+
             logger.info(
-                "🚀 Starting Claude process",
+                "🚀 Starting Claude process (interactive mode)",
                 session_id=self.session_id,
                 project_path=self.project_path,
                 model=model or settings.default_model
             )
-            
-            # Start process from src directory (where Claude works without API key)
+
+            # Start process from src directory
             src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
             logger.info(f"📁 Working directory: {src_dir}")
             logger.info(f"⚡ Command: {' '.join(cmd)}")
-            
+
             # Prepare environment variables
             env = os.environ.copy()
             if provider_config:
                 env.update(provider_config)
                 logger.info(f"🔧 Using provider config: {list(provider_config.keys())}")
-            
-            # Start process with real-time output streaming
+
+            # Start process in interactive mode with stdin
             self.process = await asyncio.create_subprocess_exec(
                 *cmd,
                 cwd=src_dir,
+                stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                env=env  # Pass environment variables
+                env=env
             )
-            
+
             self.is_running = True
             logger.info(f"✅ Claude process started (PID: {self.process.pid})")
-            
+
             # Start real-time output processing in background
             asyncio.create_task(self._process_output_streams())
-            
-            # Give the process a moment to start and produce output
+
+            # Wait a moment for process to initialize
             await asyncio.sleep(1)
-            
-            # Wait for process to complete
-            return_code = await self.process.wait()
-            self.is_running = False
-            
-            logger.info(
-                "🏁 Claude process completed",
-                session_id=self.session_id,
-                return_code=return_code
-            )
-            
-            if return_code == 0:
-                # Signal end of output
-                await self.output_queue.put(None)
-                return True
-            else:
-                # Handle error
-                logger.error(f"❌ Claude process failed with exit code {return_code}")
-                await self.error_queue.put(f"Process failed with exit code {return_code}")
-                await self.error_queue.put(None)
-                return False
-            
+
+            # Combine system prompt with user prompt if provided
+            full_prompt = prompt
+            if system_prompt and not resume_session:
+                full_prompt = f"[System: {system_prompt}]\n\n{prompt}"
+
+            # Send the prompt via stdin
+            logger.info(f"📝 Sending prompt via stdin: {full_prompt[:100]}...")
+            self.process.stdin.write(f"{full_prompt}\n".encode())
+            await self.process.stdin.drain()
+
+            # Close stdin to signal end of input (like pressing Ctrl+D)
+            self.process.stdin.close()
+            logger.info("📝 Stdin closed (EOF sent)")
+
+            # Don't wait for process to exit naturally, it will be terminated when output is complete
+            # The process will be kept running until we explicitly stop it
+            return True
+
         except Exception as e:
             logger.error(
                 "💥 Failed to start Claude process",
@@ -237,9 +228,29 @@ class ClaudeProcess:
                                             logger.info(f"👤 User text: {item.get('text', '')[:100]}...")
                             
                             else:
-                                # Check if this is an error result
-                                if msg_type == "result" and data.get("is_error"):
-                                    logger.error(f"📨 Error result: {json.dumps(data, ensure_ascii=False)}")
+                                # Check if this is a result message (indicates completion)
+                                if msg_type == "result":
+                                    if data.get("is_error"):
+                                        logger.error(f"📨 Error result: {json.dumps(data, ensure_ascii=False)}")
+                                    else:
+                                        logger.info(f"✅ Result received: {str(data)[:200]}...")
+
+                                    # Result message indicates completion, terminate the process
+                                    logger.info("🏁 Received result message, terminating process")
+                                    # Signal end of output
+                                    await self.output_queue.put(None)
+                                    # Stop the process
+                                    if self.process:
+                                        try:
+                                            self.process.terminate()
+                                            await asyncio.wait_for(self.process.wait(), timeout=2.0)
+                                        except asyncio.TimeoutError:
+                                            self.process.kill()
+                                            await self.process.wait()
+                                        except Exception as e:
+                                            logger.error(f"Error terminating process: {e}")
+                                    self.is_running = False
+                                    return  # Exit the read loop
                                 else:
                                     logger.info(f"📨 Unknown message type [{msg_type}]: {str(data)[:100]}...")
                             

@@ -1,6 +1,5 @@
 """Model provider configuration and registry."""
 
-import os
 from typing import Dict, Optional, List
 from pydantic import BaseModel, Field
 from enum import Enum
@@ -147,9 +146,12 @@ class ProviderRegistry:
         """Get provider configuration for a model."""
         provider = self.get_provider_by_model(model)
 
-        # Get default values from environment variables
-        env_base_url = os.getenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
-        env_api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        # Import settings here to avoid circular import
+        from claude_code_api.core.config import settings
+
+        # Get default values from settings (which reads from .env file)
+        env_base_url = settings.anthropic_base_url
+        env_api_key = settings.anthropic_api_key
 
         if not provider:
             # Fallback to default configuration
@@ -159,7 +161,7 @@ class ProviderRegistry:
                 "ANTHROPIC_MODEL": model
             }
 
-        # Use custom values if provided, otherwise use environment variables, finally use provider defaults
+        # Use custom values if provided, otherwise use settings values, finally use provider defaults
         base_url = custom_base_url or env_base_url or provider.base_url
         api_key = custom_api_key or env_api_key
 
