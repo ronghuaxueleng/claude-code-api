@@ -24,16 +24,13 @@ services:
       # Claude CLI 配置
       - CLAUDE_BINARY_PATH=/usr/local/bin/claude
 
-      # Anthropic API 配置（从 .env 文件读取）
-      - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-https://api.anthropic.com}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN:-}
-      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-sonnet-4-5-20250929}
+      # 注意：Anthropic API 配置从 .env 文件读取，不在此处设置
+      # 这样可以确保 .env 文件中的配置生效
 
       # 数据库配置
       - DATABASE_URL=${DATABASE_URL:-sqlite:///./claude_api.db}
 
-      # 认证配置（空字符串会被正确处理）
+      # 认证配置
       - REQUIRE_AUTH=${REQUIRE_AUTH:-false}
 
       # 项目配置

@@ -184,13 +184,22 @@ class ClaudeProcess:
                             if msg_type == "assistant":
                                 content = data.get("message", {}).get("content", "")
                                 partial_indicator = " [PARTIAL]" if is_partial else ""
-                                
+
                                 if isinstance(content, str):
-                                    logger.info(f"🤖 Assistant response{partial_indicator}: {content[:100]}...")
+                                    # Check if this is an API error
+                                    if "API Error" in content or "error" in content.lower():
+                                        logger.error(f"🤖 API Error response{partial_indicator}: {content}")
+                                    else:
+                                        logger.info(f"🤖 Assistant response{partial_indicator}: {content[:100]}...")
                                 elif isinstance(content, list):
                                     for item in content:
                                         if isinstance(item, dict) and item.get("type") == "text":
-                                            logger.info(f"🤖 Assistant text{partial_indicator}: {item.get('text', '')[:100]}...")
+                                            text = item.get('text', '')
+                                            # Check if this is an API error
+                                            if "API Error" in text or "error" in text.lower():
+                                                logger.error(f"🤖 API Error text{partial_indicator}: {text}")
+                                            else:
+                                                logger.info(f"🤖 Assistant text{partial_indicator}: {text[:100]}...")
                             
                             elif msg_type == "thinking":
                                 thinking_content = data.get("content", "")
@@ -228,7 +237,11 @@ class ClaudeProcess:
                                             logger.info(f"👤 User text: {item.get('text', '')[:100]}...")
                             
                             else:
-                                logger.info(f"📨 Unknown message type [{msg_type}]: {str(data)[:100]}...")
+                                # Check if this is an error result
+                                if msg_type == "result" and data.get("is_error"):
+                                    logger.error(f"📨 Error result: {json.dumps(data, ensure_ascii=False)}")
+                                else:
+                                    logger.info(f"📨 Unknown message type [{msg_type}]: {str(data)[:100]}...")
                             
                         except json.JSONDecodeError:
                             # Handle non-JSON output
