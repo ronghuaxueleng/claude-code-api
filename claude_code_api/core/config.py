@@ -4,7 +4,7 @@ import os
 import shutil
 from typing import List, Union
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def find_claude_binary() -> str:
@@ -54,6 +54,16 @@ def find_claude_binary() -> str:
 class Settings(BaseSettings):
     """Application settings."""
 
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        # 重要：不要尝试将字符串解析为 JSON
+        json_schema_extra={
+            "env_parse_none_str": ""
+        }
+    )
+
     # API Configuration
     api_title: str = "Claude Code API Gateway"
     api_version: str = "1.0.0"
@@ -69,10 +79,11 @@ class Settings(BaseSettings):
     require_auth: bool = False
 
     @field_validator('api_keys', mode='before')
+    @classmethod
     def parse_api_keys(cls, v):
         """Parse API keys from string or list, handle empty values gracefully."""
         # Handle None or empty string
-        if not v or v == "":
+        if v is None or v == "":
             return []
         # Handle string input (comma-separated)
         if isinstance(v, str):
@@ -137,11 +148,6 @@ class Settings(BaseSettings):
     # Streaming Configuration
     streaming_chunk_size: int = 1024
     streaming_timeout_seconds: int = 30  # Reduced from 300 to 30 seconds
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
 
 
 # Create global settings instance
