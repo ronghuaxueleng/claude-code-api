@@ -58,6 +58,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",  # 忽略未定义的环境变量
         # 重要：不要尝试将字符串解析为 JSON
         json_schema_extra={
             "env_parse_none_str": ""
@@ -75,22 +76,23 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Authentication
-    api_keys: List[str] = Field(default_factory=list)
+    # 使用 Union 类型，允许字符串或列表，避免 JSON 解析问题
+    api_keys: Union[str, List[str]] = ""
     require_auth: bool = False
 
-    @field_validator('api_keys', mode='before')
+    @field_validator('api_keys', mode='after')
     @classmethod
-    def parse_api_keys(cls, v):
-        """Parse API keys from string or list, handle empty values gracefully."""
+    def parse_api_keys(cls, v) -> List[str]:
+        """Parse API keys from string to list."""
+        # Already a list
+        if isinstance(v, list):
+            return v
         # Handle None or empty string
-        if v is None or v == "":
+        if not v or v == "":
             return []
         # Handle string input (comma-separated)
         if isinstance(v, str):
             return [x.strip() for x in v.split(',') if x.strip()]
-        # Handle list input
-        if isinstance(v, list):
-            return v
         # Fallback to empty list
         return []
 
@@ -121,13 +123,18 @@ class Settings(BaseSettings):
     log_file_path: str = "claude_api.log"  # Log file path
 
     # CORS Configuration
-    allowed_origins: List[str] = Field(default=["*"])
-    allowed_methods: List[str] = Field(default=["*"])
-    allowed_headers: List[str] = Field(default=["*"])
+    # 使用 Union 类型，允许字符串或列表
+    allowed_origins: Union[str, List[str]] = "*"
+    allowed_methods: Union[str, List[str]] = "*"
+    allowed_headers: Union[str, List[str]] = "*"
 
-    @field_validator('allowed_origins', 'allowed_methods', 'allowed_headers', mode='before')
-    def parse_cors_lists(cls, v):
+    @field_validator('allowed_origins', 'allowed_methods', 'allowed_headers', mode='after')
+    @classmethod
+    def parse_cors_lists(cls, v) -> List[str]:
         """Parse CORS lists from string, handle empty values gracefully."""
+        # Already a list
+        if isinstance(v, list):
+            return v if v else ["*"]
         # Handle None or empty string
         if not v or v == "":
             return ["*"]
@@ -135,9 +142,6 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             parsed = [x.strip() for x in v.split(',') if x.strip()]
             return parsed if parsed else ["*"]
-        # Handle list input
-        if isinstance(v, list):
-            return v if v else ["*"]
         # Fallback to wildcard
         return ["*"]
 
