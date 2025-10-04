@@ -1,5 +1,6 @@
 """Model provider configuration and registry."""
 
+import os
 from typing import Dict, Optional, List
 from pydantic import BaseModel, Field
 from enum import Enum
@@ -141,23 +142,27 @@ class ProviderRegistry:
         """Get all registered providers."""
         return list(self.providers.values())
     
-    def get_provider_config(self, model: str, custom_base_url: Optional[str] = None, 
+    def get_provider_config(self, model: str, custom_base_url: Optional[str] = None,
                           custom_api_key: Optional[str] = None) -> Dict[str, str]:
         """Get provider configuration for a model."""
         provider = self.get_provider_by_model(model)
-        
+
+        # Get default values from environment variables
+        env_base_url = os.getenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+        env_api_key = os.getenv("ANTHROPIC_API_KEY", "")
+
         if not provider:
             # Fallback to default configuration
             return {
-                "ANTHROPIC_BASE_URL": custom_base_url or "https://api.anthropic.com",
-                "ANTHROPIC_API_KEY": custom_api_key or "",
+                "ANTHROPIC_BASE_URL": custom_base_url or env_base_url,
+                "ANTHROPIC_API_KEY": custom_api_key or env_api_key,
                 "ANTHROPIC_MODEL": model
             }
-        
-        # Use custom values if provided, otherwise use provider defaults
-        base_url = custom_base_url or provider.base_url
-        api_key = custom_api_key or ""
-        
+
+        # Use custom values if provided, otherwise use environment variables, finally use provider defaults
+        base_url = custom_base_url or env_base_url or provider.base_url
+        api_key = custom_api_key or env_api_key
+
         return {
             "ANTHROPIC_BASE_URL": base_url,
             "ANTHROPIC_API_KEY": api_key,

@@ -144,22 +144,20 @@ async def create_chat_completion(
         project_path = create_project_directory(project_id)
         
         # Handle provider configuration
-        provider_config = None
-        if request.provider_api_key or request.provider_base_url or request.provider_model:
-            # Use provider-specific configuration
-            model_to_use = request.provider_model or request.model
-            provider_config = get_provider_config_for_model(
-                model=model_to_use,
-                custom_base_url=request.provider_base_url,
-                custom_api_key=request.provider_api_key
-            )
-            logger.info(
-                "Using provider configuration",
-                model=model_to_use,
-                has_api_key=bool(request.provider_api_key),
-                has_base_url=bool(request.provider_base_url),
-                provider_keys=list(provider_config.keys())
-            )
+        # Always generate provider config to ensure environment variables are passed to Claude CLI
+        model_to_use = request.provider_model or request.model
+        provider_config = get_provider_config_for_model(
+            model=model_to_use,
+            custom_base_url=request.provider_base_url,
+            custom_api_key=request.provider_api_key
+        )
+        logger.info(
+            "Using provider configuration",
+            model=model_to_use,
+            has_api_key=bool(provider_config.get("ANTHROPIC_API_KEY")),
+            has_base_url=bool(provider_config.get("ANTHROPIC_BASE_URL")),
+            provider_keys=list(provider_config.keys())
+        )
         
         # Handle session management
         resume_session_id = None
