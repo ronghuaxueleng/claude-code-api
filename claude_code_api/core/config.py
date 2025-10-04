@@ -70,9 +70,18 @@ class Settings(BaseSettings):
 
     @field_validator('api_keys', mode='before')
     def parse_api_keys(cls, v):
+        """Parse API keys from string or list, handle empty values gracefully."""
+        # Handle None or empty string
+        if not v or v == "":
+            return []
+        # Handle string input (comma-separated)
         if isinstance(v, str):
             return [x.strip() for x in v.split(',') if x.strip()]
-        return v or []
+        # Handle list input
+        if isinstance(v, list):
+            return v
+        # Fallback to empty list
+        return []
 
     # Claude Configuration
     claude_binary_path: str = find_claude_binary()
@@ -107,9 +116,19 @@ class Settings(BaseSettings):
 
     @field_validator('allowed_origins', 'allowed_methods', 'allowed_headers', mode='before')
     def parse_cors_lists(cls, v):
+        """Parse CORS lists from string, handle empty values gracefully."""
+        # Handle None or empty string
+        if not v or v == "":
+            return ["*"]
+        # Handle string input (comma-separated)
         if isinstance(v, str):
-            return [x.strip() for x in v.split(',') if x.strip()]
-        return v or ["*"]
+            parsed = [x.strip() for x in v.split(',') if x.strip()]
+            return parsed if parsed else ["*"]
+        # Handle list input
+        if isinstance(v, list):
+            return v if v else ["*"]
+        # Fallback to wildcard
+        return ["*"]
 
     # Rate Limiting
     rate_limit_requests_per_minute: int = 100
